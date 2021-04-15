@@ -18,8 +18,9 @@ fn main() {
 /// Compute the minimum number of pages given the image graph and the max on each page.
 fn min_pages(graph: DependencyGraph, max_by_page: usize) -> Option<usize> {
     assert!(max_by_page > 0);
-    if !graph.is_acyclic() { None }
-    else {
+    if !graph.is_acyclic() {
+        None
+    } else {
         Some(min_pages_feasible(graph, max_by_page))
     }
 }
@@ -55,10 +56,7 @@ fn min_pages_feasible(mut graph: DependencyGraph, max_by_page: usize) -> usize {
             for &photo in page {
                 subgraph.remove(photo);
             }
-            result = min(
-                result,
-                1 + min_pages_feasible(subgraph, max_by_page),
-            );
+            result = min(result, 1 + min_pages_feasible(subgraph, max_by_page));
         }
         result
     }
@@ -191,7 +189,7 @@ mod tests {
             for v in 1..u {
                 edges.push((u, v))
             }
-        };
+        }
         let g = DependencyGraph::new(edges, 15);
         assert_eq!(min_pages(g, 3), Some(6));
     }
