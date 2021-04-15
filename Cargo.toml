@@ -1,0 +1,7 @@
+[package]
+name = "photo-ordering"
+version = "0.1.0"
+authors = ["rverclos <remi.de.joannis.de.verclos@ens-lyon.org>"]
+edition = "2018"
+
+[dependencies]
