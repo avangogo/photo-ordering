@@ -5,3 +5,4 @@ authors = ["rverclos <remi.de.joannis.de.verclos@ens-lyon.org>"]
 edition = "2018"
 
 [dependencies]
+itertools = "0.10.0"
