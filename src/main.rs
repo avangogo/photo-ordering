@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use std::cmp::min;
+use std::cmp::{min, max};
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::error::Error;
@@ -34,32 +34,38 @@ fn min_pages_feasible(mut graph: DependencyGraph, max_by_page: usize) -> usize {
     if max_by_page == 1 {
         return n_photos;
     }
-    // Shortcut for when the edge density is low enough to ensure that a greedy approach
-    // gives ceil(n_photos / max_by_page) pages.
-    if n_photos >= max_by_page * (graph.count_edges() + 1) {
-        return (n_photos + max_by_page - 1) / max_by_page;
-    };
+    // Get the photos that can go anywhere
+    let photos_no_dependency = graph.isolated_vertices();
+    // Case 1: Photos without dependency can be added anywhere afterwards
+    // as long as there are ceil(n_photos / max_by_page) spots.
+    if !photos_no_dependency.is_empty() {
+        for &photo in &photos_no_dependency {
+            graph.remove(photo);
+        }
+        return max(
+            (n_photos + max_by_page - 1) / max_by_page,
+            min_pages_feasible(graph, max_by_page)
+        )
+    }
     // Get the photos that can go on the next page
-    let photos_ready = graph.get_roots();
-    assert!(!photos_ready.is_empty());
-    // Case 1: All ready-to-use photos fit in the next page
+    let photos_ready = graph.roots();
+    // Case 2: All ready-to-use photos fit in the next page.
     if photos_ready.len() <= max_by_page {
         for &photo in &photos_ready {
             graph.remove(photo);
         }
-        1 + min_pages_feasible(graph, max_by_page)
-    } else {
-        // Case 2: Try all max_by_page-combination for the next page
-        let mut result = n_photos;
-        for page in photos_ready.iter().combinations(max_by_page) {
-            let mut subgraph = graph.clone();
-            for &photo in page {
-                subgraph.remove(photo);
-            }
-            result = min(result, 1 + min_pages_feasible(subgraph, max_by_page));
-        }
-        result
+        return 1 + min_pages_feasible(graph, max_by_page)
     }
+    // Case 3: Try all max_by_page-combination for the next page.
+    let mut result = n_photos;
+    for page in photos_ready.iter().combinations(max_by_page) {
+        let mut subgraph = graph.clone();
+        for &photo in page {
+            subgraph.remove(photo);
+        }
+        result = min(result, 1 + min_pages_feasible(subgraph, max_by_page));
+    }
+    result
 }
 
 /// Directed graph data structure by adjacency lists
@@ -80,7 +86,7 @@ impl DependencyGraph {
         Self { adj_list }
     }
     /// Return the set of vertices with no ingoing edge.
-    fn get_roots(&self) -> BTreeSet<u32> {
+    fn roots(&self) -> BTreeSet<u32> {
         let mut result: BTreeSet<u32> = self.adj_list.keys().copied().collect();
         for neighbourhood in self.adj_list.values() {
             for u in neighbourhood.iter() {
@@ -88,6 +94,10 @@ impl DependencyGraph {
             }
         }
         result
+    }
+    /// Return the set of vertices with no edge (in- or outgoig)
+    fn isolated_vertices(&self) -> Vec<u32> {
+        self.roots().into_iter().filter(|v| self.adj_list.get(v).unwrap().is_empty() ).collect()
     }
     /// Remove a vertex.
     fn remove(&mut self, vertex: u32) {
@@ -104,7 +114,7 @@ impl DependencyGraph {
     fn is_acyclic(&self) -> bool {
         let mut graph = self.clone();
         while !graph.adj_list.is_empty() {
-            let roots = graph.get_roots();
+            let roots = graph.roots();
             if roots.is_empty() {
                 return false;
             } else {
@@ -145,10 +155,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_roots() {
+    fn test_roots() {
         let g = DependencyGraph::new(vec![(1, 4), (3, 2), (5, 3)], 6);
         let expected: BTreeSet<_> = vec![1, 5, 6].into_iter().collect();
-        assert_eq!(g.get_roots(), expected);
+        assert_eq!(g.roots(), expected);
+    }
+    #[test]
+    fn test_isolated_vertices() {
+        let g = DependencyGraph::new(vec![(1, 4), (3, 2), (5, 3), (5, 7)], 9);
+        let expected = vec![6, 8, 9];
+        assert_eq!(g.isolated_vertices(), expected);
     }
     #[test]
     fn test_count_edges() {
@@ -192,6 +208,13 @@ mod tests {
         }
         let g = DependencyGraph::new(edges, 15);
         assert_eq!(min_pages(g, 3), Some(6));
+    }
+    #[test]
+    fn slower_example() {
+        // Star pointing to its root
+        let edges: Vec<_> = (1..12).map(|i| (i, 12)).collect();
+        let g = DependencyGraph::new(edges, 12);
+        assert_eq!(min_pages(g, 3), Some(5));
     }
     #[test]
     fn path_example() {
