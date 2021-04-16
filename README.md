@@ -20,7 +20,7 @@ cargo run --release examples/example1
 The output should be 3.
 
 ## Python version
-A python translation in the `python` directory. It can be tested from the root of the project by:
+A python translation is in the `python` directory. It can be tested from the root of the project by:
 ```
 python3 python/main.py examples/example1
 ```

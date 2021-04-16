@@ -21,7 +21,6 @@ def main():
 # Compute the minimal number of pages needed given constraint graph
 def min_page_feasible(graph: dict, max_by_page: int) -> int:
     n_photos = len(graph)
-    n_edges = sum( len(adj) for adj in graph.values() )
     if n_photos == 0:
         return 0
     if max_by_page == 1:
