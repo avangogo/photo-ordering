@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use std::cmp::{min, max};
+use std::cmp::{max, min};
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::error::Error;
@@ -44,8 +44,8 @@ fn min_pages_feasible(mut graph: DependencyGraph, max_by_page: usize) -> usize {
         }
         return max(
             (n_photos + max_by_page - 1) / max_by_page,
-            min_pages_feasible(graph, max_by_page)
-        )
+            min_pages_feasible(graph, max_by_page),
+        );
     }
     // Get the photos that can go on the next page
     let photos_ready = graph.roots();
@@ -54,7 +54,7 @@ fn min_pages_feasible(mut graph: DependencyGraph, max_by_page: usize) -> usize {
         for &photo in &photos_ready {
             graph.remove(photo);
         }
-        return 1 + min_pages_feasible(graph, max_by_page)
+        return 1 + min_pages_feasible(graph, max_by_page);
     }
     // Case 3: Try all max_by_page-combination for the next page.
     let mut result = n_photos;
@@ -97,7 +97,10 @@ impl DependencyGraph {
     }
     /// Return the set of vertices with no edge (in- or outgoig)
     fn isolated_vertices(&self) -> Vec<u32> {
-        self.roots().into_iter().filter(|v| self.adj_list.get(v).unwrap().is_empty() ).collect()
+        self.roots()
+            .into_iter()
+            .filter(|v| self.adj_list.get(v).unwrap().is_empty())
+            .collect()
     }
     /// Remove a vertex.
     fn remove(&mut self, vertex: u32) {
@@ -105,9 +108,6 @@ impl DependencyGraph {
     }
     fn count_vertices(&self) -> usize {
         self.adj_list.len()
-    }
-    fn count_edges(&self) -> usize {
-        self.adj_list.values().map(|list| list.len()).sum()
     }
     /// Compute if the graph contains no directed cycle.
     // Note: this is slower than a bfs because get_roots is not optimized.
@@ -165,11 +165,6 @@ mod tests {
         let g = DependencyGraph::new(vec![(1, 4), (3, 2), (5, 3), (5, 7)], 9);
         let expected = vec![6, 8, 9];
         assert_eq!(g.isolated_vertices(), expected);
-    }
-    #[test]
-    fn test_count_edges() {
-        let g = DependencyGraph::new(vec![(1, 4), (3, 2), (4, 3)], 4);
-        assert_eq!(g.count_edges(), 3);
     }
     #[test]
     fn test_is_acyclic() {
