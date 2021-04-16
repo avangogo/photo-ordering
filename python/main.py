@@ -26,16 +26,20 @@ def min_page_feasible(graph: dict, max_by_page: int) -> int:
         return 0
     if max_by_page == 1:
         return n_photos
-    if n_photos >= max_by_page * (n_edges + 1):
-        return int( math.ceil( n_photos / max_by_page ) )
-    # Get availabke photos
-    photos_ready = get_roots(graph)
-    # Case 1: all of them fits on the next page 
+    # Case 1: Remove photos without dependency
+    photos_no_dependency = isolated_vertices(graph)
+    if photos_no_dependency:
+        for photo in photos_no_dependency:
+            del graph[photo]
+        return max(min_page_feasible(graph, max_by_page), int(math.ceil(n_photos/max_by_page)))
+    # Get available photos
+    photos_ready = roots(graph)
+    # Case 2: all of them fits on the next page 
     if len(photos_ready) <= max_by_page:
         for photo in photos_ready:
             del graph[photo]
         return 1 + min_page_feasible(graph, max_by_page)
-    # Case 2: Bruteforce on all combination for the next page
+    # Case 3: Bruteforce on all combination for the next page
     else:
         result = n_photos
         for page in itertools.combinations(photos_ready, max_by_page):
@@ -46,7 +50,7 @@ def min_page_feasible(graph: dict, max_by_page: int) -> int:
         return result
 
 # Return the vertices with no ingoing edges
-def get_roots(graph: dict):
+def roots(graph: dict):
     result = set(graph.keys())
     for neighbourhood in graph.values():
         for v in neighbourhood:
@@ -54,13 +58,17 @@ def get_roots(graph: dict):
                 result.remove(v)
     return result
 
+# Return the vertices adjacent to no edge
+def isolated_vertices(graph: dict):
+    return [ v for v in roots(graph) if len(graph[v]) == 0 ]  
+
 # Return True if the graph has no directed cycle
 def is_acyclic(graph: dict):
     g = graph.copy()
     while len(g) != 0:
-        roots = get_roots(g)
-        if len(roots) == 0: return False
-        for v in roots:
+        g_roots = roots(g)
+        if len(g_roots) == 0: return False
+        for v in g_roots:
             del g[v]
     return True
 
